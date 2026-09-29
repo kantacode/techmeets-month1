@@ -65,6 +65,12 @@
       background: #357abd;
     }
 
+    /* 空欄のときは押せないことが分かるようにグレーにする */
+    .form button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
     .list {
       margin: 0;
       padding: 0;
@@ -127,7 +133,7 @@
 
     <form class="form" id="todo-form">
       <input type="text" id="todo-input" placeholder="タスクを入力" autocomplete="off">
-      <button type="submit">追加</button>
+      <button type="submit" id="add-btn" disabled>追加</button>
     </form>
 
     <p class="count" id="todo-count"></p>
@@ -141,6 +147,7 @@
 
     const form = document.getElementById("todo-form");
     const input = document.getElementById("todo-input");
+    const addBtn = document.getElementById("add-btn");
     const list = document.getElementById("todo-list");
     const count = document.getElementById("todo-count");
 
@@ -196,8 +203,15 @@
 
       todos.push({ text: text, done: false });
       input.value = "";
+      updateAddButton();
       render();
     });
+
+    // 入力欄が空（スペースだけも含む）のときは追加ボタンを押せなくする
+    function updateAddButton() {
+      addBtn.disabled = input.value.trim() === "";
+    }
+    input.addEventListener("input", updateAddButton);
 
     render();
   </script>
