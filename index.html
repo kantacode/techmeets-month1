@@ -157,7 +157,7 @@
 
       // 完了件数 / 総件数
       const doneCount = todos.filter((todo) => todo.done).length;
-      count.textContent = `完了 ${doneCount} / ${todos.length} 件`;
+      count.textContent = `${doneCount} / ${todos.length} 件完了`;
 
       if (todos.length === 0) {
         const empty = document.createElement("p");
