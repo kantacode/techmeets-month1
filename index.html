@@ -119,6 +119,29 @@
       text-align: center;
     }
 
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .filter-btn {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 14px;
+      color: #4a90e2;
+      background: #fff;
+      border: 1px solid #4a90e2;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* 選ばれているフィルターは塗りつぶして目立たせる */
+    .filter-btn.active {
+      color: #fff;
+      background: #4a90e2;
+    }
+
     .count {
       margin: 0 0 12px;
       font-size: 14px;
@@ -136,6 +159,12 @@
       <button type="submit" id="add-btn" disabled>追加</button>
     </form>
 
+    <div class="filters" id="filters">
+      <button type="button" class="filter-btn active" data-filter="all">すべて</button>
+      <button type="button" class="filter-btn" data-filter="active">未完了</button>
+      <button type="button" class="filter-btn" data-filter="done">完了</button>
+    </div>
+
     <p class="count" id="todo-count"></p>
 
     <ul class="list" id="todo-list"></ul>
@@ -150,24 +179,42 @@
     const addBtn = document.getElementById("add-btn");
     const list = document.getElementById("todo-list");
     const count = document.getElementById("todo-count");
+    const filters = document.getElementById("filters");
+
+    // 今選ばれているフィルター（"all" / "active" / "done"）
+    let currentFilter = "all";
+
+    // フィルターごとの「表示する条件」と「0件のときのメッセージ」
+    const filterRules = {
+      all: { match: () => true, emptyText: "タスクはありません" },
+      active: { match: (todo) => !todo.done, emptyText: "未完了のタスクはありません" },
+      done: { match: (todo) => todo.done, emptyText: "完了したタスクはありません" },
+    };
 
     // 配列の内容をもとにリストを描画する
     function render() {
       list.innerHTML = "";
 
-      // 完了件数 / 総件数
+      // 完了件数 / 総件数（フィルターに関係なく全体の数を出す）
       const doneCount = todos.filter((todo) => todo.done).length;
       count.textContent = `${doneCount} / ${todos.length} 件完了`;
 
-      if (todos.length === 0) {
+      // 表示するタスクだけを選ぶ
+      // 完了・削除のときに todos の何番目かが必要なので、元の index も一緒に持っておく
+      const rule = filterRules[currentFilter];
+      const visibleTodos = todos
+        .map((todo, index) => ({ todo, index }))
+        .filter(({ todo }) => rule.match(todo));
+
+      if (visibleTodos.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
-        empty.textContent = "タスクはありません";
+        empty.textContent = rule.emptyText;
         list.appendChild(empty);
         return;
       }
 
-      todos.forEach((todo, index) => {
+      visibleTodos.forEach(({ todo, index }) => {
         const li = document.createElement("li");
         li.className = "item" + (todo.done ? " done" : "");
 
@@ -212,6 +259,18 @@
       addBtn.disabled = input.value.trim() === "";
     }
     input.addEventListener("input", updateAddButton);
+
+    // フィルターボタンを押したら、選ばれた条件で表示し直す
+    filters.addEventListener("click", (e) => {
+      const button = e.target.closest(".filter-btn");
+      if (!button) return;
+
+      currentFilter = button.dataset.filter;
+      filters.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn === button);
+      });
+      render();
+    });
 
     render();
   </script>
