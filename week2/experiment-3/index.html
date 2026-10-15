@@ -34,12 +34,14 @@
 
     .form {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 20px;
     }
 
     .form input {
       flex: 1;
+      min-width: 160px;
       padding: 10px 12px;
       font-size: 16px;
       border: 1px solid #ccc;
@@ -49,6 +51,12 @@
 
     .form input:focus {
       border-color: #4a90e2;
+    }
+
+    /* 日付欄は中身の幅だけにして、タスク名の欄を広く取る */
+    .form .due-input {
+      flex: none;
+      min-width: 0;
     }
 
     .form button {
@@ -89,8 +97,16 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .item-text {
+    .item.overdue {
+      background: #fdecec;
+    }
+
+    .item-body {
       flex: 1;
+      min-width: 0;
+    }
+
+    .item-text {
       cursor: pointer;
       word-break: break-all;
     }
@@ -98,6 +114,27 @@
     .item.done .item-text {
       color: #aaa;
       text-decoration: line-through;
+    }
+
+    .item-due {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    /* 未完了で今日が締切のタスクはオレンジ、締切を過ぎたタスクは赤で知らせる */
+    .item-due.today {
+      color: #e08a00;
+      font-weight: bold;
+    }
+
+    .item-due.overdue {
+      color: #e25c5c;
+      font-weight: bold;
+    }
+
+    .item.done .item-due {
+      color: #aaa;
     }
 
     .delete-btn {
@@ -156,11 +193,58 @@
       background: #4a90e2;
     }
 
+    /* 並び替えと件数を1行に並べる */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .sort-select {
+      padding: 4px 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+    }
+
     .count {
-      margin: 0 0 12px;
+      margin: 0;
       font-size: 14px;
       color: #666;
       text-align: right;
+    }
+
+    .due-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .due-row .item-due {
+      margin-top: 0;
+    }
+
+    /* 締切の「変更」「設定」などの小さな文字ボタン */
+    .link-btn {
+      padding: 0;
+      font-size: 12px;
+      color: #4a90e2;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .due-edit-input {
+      padding: 2px 6px;
+      font-size: 13px;
+      border: 1px solid #4a90e2;
+      border-radius: 6px;
     }
   </style>
 </head>
@@ -170,6 +254,7 @@
 
     <form class="form" id="todo-form">
       <input type="text" id="todo-input" placeholder="タスクを入力" autocomplete="off">
+      <input type="date" class="due-input" id="due-input" aria-label="締切日（任意）">
       <button type="submit" id="add-btn" disabled>追加</button>
     </form>
 
@@ -181,7 +266,13 @@
       <button type="button" class="filter-btn" data-filter="done">完了済みのみ</button>
     </div>
 
-    <p class="count" id="todo-count"></p>
+    <div class="toolbar">
+      <select class="sort-select" id="sort-select" aria-label="並び順">
+        <option value="added">追加した順</option>
+        <option value="due">締切が近い順</option>
+      </select>
+      <p class="count" id="todo-count"></p>
+    </div>
 
     <ul class="list" id="todo-list"></ul>
   </div>
@@ -196,7 +287,10 @@
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
         // 形が壊れているデータは使わない
         if (!Array.isArray(saved)) return [];
-        return saved.filter((todo) => todo && typeof todo.text === "string");
+        return saved
+          .filter((todo) => todo && typeof todo.text === "string")
+          // 締切日の機能を入れる前に保存したタスクには due がないので、「締切なし」として扱う
+          .map((todo) => ({ ...todo, due: typeof todo.due === "string" ? todo.due : "" }));
       } catch (e) {
         return [];
       }
@@ -216,16 +310,22 @@
 
     const form = document.getElementById("todo-form");
     const input = document.getElementById("todo-input");
+    const dueInput = document.getElementById("due-input");
     const addBtn = document.getElementById("add-btn");
     const list = document.getElementById("todo-list");
     const count = document.getElementById("todo-count");
     const filters = document.getElementById("filters");
     const searchInput = document.getElementById("search-input");
+    const sortSelect = document.getElementById("sort-select");
 
     // 今選ばれているフィルター（"all" / "active" / "done"）
     let currentFilter = "all";
     // 検索ボックスに入力されたキーワード（前後の空白は除く）
     let keyword = "";
+    // 並び順（"added" = 追加した順 / "due" = 締切が近い順）
+    let currentSort = "added";
+    // 締切日を変更中のタスク（変更中でなければ null）
+    let editingTodo = null;
 
     // フィルターごとの「表示する条件」と「0件のときのメッセージ」
     const filterRules = {
@@ -233,6 +333,112 @@
       active: { match: (todo) => !todo.done, emptyText: "未完了のタスクはありません" },
       done: { match: (todo) => todo.done, emptyText: "完了したタスクはありません" },
     };
+
+    // 今日の日付を "2026-10-15" の形で返す（日付入力欄と同じ形にそろえて比べられるようにする）
+    function getToday() {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${now.getFullYear()}-${month}-${day}`;
+    }
+
+    // 締切日の表示を作る（"2026-10-20" → "締切: 2026/10/20"）
+    function createDueLabel(todo) {
+      const due = document.createElement("div");
+      due.className = "item-due";
+      due.textContent = "締切: " + todo.due.replaceAll("-", "/");
+
+      // 同じ形の文字列なので、そのまま大小を比べれば日付の前後が分かる
+      if (!todo.done) {
+        const today = getToday();
+        if (todo.due < today) {
+          due.classList.add("overdue");
+          due.textContent += "（期限切れ）";
+        } else if (todo.due === today) {
+          due.classList.add("today");
+          due.textContent += "（今日まで）";
+        }
+      }
+      return due;
+    }
+
+    // 締切日の行を作る
+    // ふだんは「締切: ○○ 変更」（締切なしなら「＋ 締切を設定」）、変更中は日付入力欄を出す
+    function createDueRow(todo) {
+      const row = document.createElement("div");
+      row.className = "due-row";
+
+      if (todo !== editingTodo) {
+        if (todo.due) {
+          row.appendChild(createDueLabel(todo));
+        }
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "link-btn";
+        editBtn.textContent = todo.due ? "変更" : "＋ 締切を設定";
+        editBtn.addEventListener("click", () => {
+          editingTodo = todo;
+          render();
+          // すぐ入力できるように日付欄にカーソルを置く
+          list.querySelector(".due-edit-input").focus();
+        });
+        row.appendChild(editBtn);
+        return row;
+      }
+
+      // ここから変更中の表示
+      const dateInput = document.createElement("input");
+      dateInput.type = "date";
+      dateInput.className = "due-edit-input";
+      dateInput.value = todo.due;
+      dateInput.setAttribute("aria-label", "締切日");
+
+      // 日付を空にして保存すると「締切なし」に戻せる
+      const saveEdit = () => {
+        todo.due = dateInput.value;
+        editingTodo = null;
+        saveTodos();
+        render();
+      };
+      const cancelEdit = () => {
+        editingTodo = null;
+        render();
+      };
+
+      // Enter で保存、Esc でキャンセル
+      dateInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") saveEdit();
+        if (e.key === "Escape") cancelEdit();
+      });
+
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "link-btn";
+      saveBtn.textContent = "保存";
+      saveBtn.addEventListener("click", saveEdit);
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "link-btn";
+      cancelBtn.textContent = "キャンセル";
+      cancelBtn.addEventListener("click", cancelEdit);
+
+      row.appendChild(dateInput);
+      row.appendChild(saveBtn);
+      row.appendChild(cancelBtn);
+      return row;
+    }
+
+    // 締切が近い順に並べるための比べ方
+    // 締切なしのタスクは一番うしろ。締切が同じなら追加した順のまま
+    function compareByDue(a, b) {
+      if (a.todo.due && b.todo.due && a.todo.due !== b.todo.due) {
+        return a.todo.due < b.todo.due ? -1 : 1;
+      }
+      if (a.todo.due && !b.todo.due) return -1;
+      if (!a.todo.due && b.todo.due) return 1;
+      return a.index - b.index;
+    }
 
     // 配列の内容をもとにリストを描画する
     function render() {
@@ -252,6 +458,11 @@
         .filter(({ todo }) => rule.match(todo))
         .filter(({ todo }) => todo.text.toLowerCase().includes(lowerKeyword));
 
+      // 並び替えるのは表示用の配列だけ。todos 本体の順番（追加した順）は変えない
+      if (currentSort === "due") {
+        visibleTodos.sort(compareByDue);
+      }
+
       if (visibleTodos.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
@@ -265,6 +476,10 @@
       visibleTodos.forEach(({ todo, index }) => {
         const li = document.createElement("li");
         li.className = "item" + (todo.done ? " done" : "");
+        // 締切を過ぎた未完了のタスクは、枠全体を薄い赤にして目立たせる
+        if (!todo.done && todo.due && todo.due < getToday()) {
+          li.classList.add("overdue");
+        }
 
         const text = document.createElement("span");
         text.className = "item-text";
@@ -284,7 +499,13 @@
           render();
         });
 
-        li.appendChild(text);
+        // タスク名の下に締切日の行を並べる
+        const body = document.createElement("div");
+        body.className = "item-body";
+        body.appendChild(text);
+        body.appendChild(createDueRow(todo));
+
+        li.appendChild(body);
         li.appendChild(deleteBtn);
         list.appendChild(li);
       });
@@ -298,9 +519,11 @@
       // 空欄やスペースだけの入力は追加しない
       if (text === "") return;
 
-      todos.push({ text: text, done: false });
+      // 締切日は空欄でもよい（その場合は "" が入る）
+      todos.push({ text: text, done: false, due: dueInput.value });
       saveTodos();
       input.value = "";
+      dueInput.value = "";
       updateAddButton();
       render();
     });
@@ -326,6 +549,12 @@
     // 検索ボックスに入力するたびに絞り込み直す
     searchInput.addEventListener("input", () => {
       keyword = searchInput.value.trim();
+      render();
+    });
+
+    // 並び順を切り替えたら表示し直す
+    sortSelect.addEventListener("change", () => {
+      currentSort = sortSelect.value;
       render();
     });
 
