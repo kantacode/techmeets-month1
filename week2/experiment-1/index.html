@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スライドショー</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background: #f2f4f7;
+      color: #333;
+    }
+
+    .container {
+      max-width: 648px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    .slide-image {
+      display: block;
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 600 / 300;
+      margin: 0 auto;
+      border-radius: 8px;
+      background: #ddd;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+    }
+
+    .controls button {
+      padding: 10px 16px;
+      font-size: 16px;
+      color: #fff;
+      background: #4a90e2;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .controls button:hover {
+      background: #357abd;
+    }
+
+    .counter {
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>スライドショー</h1>
+
+    <img class="slide-image" id="slideImage" src="" alt="">
+
+    <div class="controls">
+      <button id="prevButton">← 前へ</button>
+      <span class="counter" id="counter"></span>
+      <button id="nextButton">次へ →</button>
+    </div>
+  </div>
+
+  <script>
+    // 表示する画像の一覧（placehold.jp のプレースホルダー画像）
+    // 区別しやすいように、背景色と文字を変えています
+    const images = [
+      { src: "https://placehold.jp/4a90e2/ffffff/600x300.png?text=Slide%201", alt: "スライド1" },
+      { src: "https://placehold.jp/e2574a/ffffff/600x300.png?text=Slide%202", alt: "スライド2" },
+      { src: "https://placehold.jp/4ab37a/ffffff/600x300.png?text=Slide%203", alt: "スライド3" },
+      { src: "https://placehold.jp/e2a84a/ffffff/600x300.png?text=Slide%204", alt: "スライド4" },
+      { src: "https://placehold.jp/8a4ae2/ffffff/600x300.png?text=Slide%205", alt: "スライド5" },
+    ];
+
+    const slideImage = document.getElementById("slideImage");
+    const prevButton = document.getElementById("prevButton");
+    const nextButton = document.getElementById("nextButton");
+    const counter = document.getElementById("counter");
+
+    let currentIndex = 0;
+
+    // 指定した番号の画像を表示する
+    function showSlide(index) {
+      // 最後の次は最初へ、最初の前は最後へ戻る
+      currentIndex = (index + images.length) % images.length;
+
+      slideImage.src = images[currentIndex].src;
+      slideImage.alt = images[currentIndex].alt;
+      counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    }
+
+    prevButton.addEventListener("click", () => {
+      showSlide(currentIndex - 1);
+    });
+
+    nextButton.addEventListener("click", () => {
+      showSlide(currentIndex + 1);
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>

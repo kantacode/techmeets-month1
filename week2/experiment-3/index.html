@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDoリスト</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background: #f2f4f7;
+      color: #333;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    .form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .form input {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .form input:focus {
+      border-color: #4a90e2;
+    }
+
+    .form button {
+      padding: 10px 16px;
+      font-size: 16px;
+      color: #fff;
+      background: #4a90e2;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .form button:hover {
+      background: #357abd;
+    }
+
+    /* 空欄のときは押せないことが分かるようにグレーにする */
+    .form button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .item-text {
+      flex: 1;
+      cursor: pointer;
+      word-break: break-all;
+    }
+
+    .item.done .item-text {
+      color: #aaa;
+      text-decoration: line-through;
+    }
+
+    .delete-btn {
+      padding: 6px 10px;
+      font-size: 14px;
+      color: #fff;
+      background: #e25c5c;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background: #c94444;
+    }
+
+    .empty {
+      color: #999;
+      text-align: center;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .filter-btn {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 14px;
+      color: #4a90e2;
+      background: #fff;
+      border: 1px solid #4a90e2;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* 選ばれているフィルターは塗りつぶして目立たせる */
+    .filter-btn.active {
+      color: #fff;
+      background: #4a90e2;
+    }
+
+    .count {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: #666;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ToDoリスト</h1>
+
+    <form class="form" id="todo-form">
+      <input type="text" id="todo-input" placeholder="タスクを入力" autocomplete="off">
+      <button type="submit" id="add-btn" disabled>追加</button>
+    </form>
+
+    <div class="filters" id="filters">
+      <button type="button" class="filter-btn active" data-filter="all">すべて</button>
+      <button type="button" class="filter-btn" data-filter="active">未完了</button>
+      <button type="button" class="filter-btn" data-filter="done">完了</button>
+    </div>
+
+    <p class="count" id="todo-count"></p>
+
+    <ul class="list" id="todo-list"></ul>
+  </div>
+
+  <script>
+    // タスクを管理する配列
+    const todos = [];
+
+    const form = document.getElementById("todo-form");
+    const input = document.getElementById("todo-input");
+    const addBtn = document.getElementById("add-btn");
+    const list = document.getElementById("todo-list");
+    const count = document.getElementById("todo-count");
+    const filters = document.getElementById("filters");
+
+    // 今選ばれているフィルター（"all" / "active" / "done"）
+    let currentFilter = "all";
+
+    // フィルターごとの「表示する条件」と「0件のときのメッセージ」
+    const filterRules = {
+      all: { match: () => true, emptyText: "タスクはありません" },
+      active: { match: (todo) => !todo.done, emptyText: "未完了のタスクはありません" },
+      done: { match: (todo) => todo.done, emptyText: "完了したタスクはありません" },
+    };
+
+    // 配列の内容をもとにリストを描画する
+    function render() {
+      list.innerHTML = "";
+
+      // 完了件数 / 総件数（フィルターに関係なく全体の数を出す）
+      const doneCount = todos.filter((todo) => todo.done).length;
+      count.textContent = `${doneCount} / ${todos.length} 件完了`;
+
+      // 表示するタスクだけを選ぶ
+      // 完了・削除のときに todos の何番目かが必要なので、元の index も一緒に持っておく
+      const rule = filterRules[currentFilter];
+      const visibleTodos = todos
+        .map((todo, index) => ({ todo, index }))
+        .filter(({ todo }) => rule.match(todo));
+
+      if (visibleTodos.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = rule.emptyText;
+        list.appendChild(empty);
+        return;
+      }
+
+      visibleTodos.forEach(({ todo, index }) => {
+        const li = document.createElement("li");
+        li.className = "item" + (todo.done ? " done" : "");
+
+        const text = document.createElement("span");
+        text.className = "item-text";
+        text.textContent = todo.text;
+        text.addEventListener("click", () => {
+          todos[index].done = !todos[index].done;
+          render();
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "削除";
+        deleteBtn.addEventListener("click", () => {
+          todos.splice(index, 1);
+          render();
+        });
+
+        li.appendChild(text);
+        li.appendChild(deleteBtn);
+        list.appendChild(li);
+      });
+    }
+
+    // タスクを追加する
+    // <form> の submit イベントなので、追加ボタンでもEnterキーでも呼ばれる
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      // 空欄やスペースだけの入力は追加しない
+      if (text === "") return;
+
+      todos.push({ text: text, done: false });
+      input.value = "";
+      updateAddButton();
+      render();
+    });
+
+    // 入力欄が空（スペースだけも含む）のときは追加ボタンを押せなくする
+    function updateAddButton() {
+      addBtn.disabled = input.value.trim() === "";
+    }
+    input.addEventListener("input", updateAddButton);
+
+    // フィルターボタンを押したら、選ばれた条件で表示し直す
+    filters.addEventListener("click", (e) => {
+      const button = e.target.closest(".filter-btn");
+      if (!button) return;
+
+      currentFilter = button.dataset.filter;
+      filters.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn === button);
+      });
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
