@@ -187,8 +187,32 @@
   </div>
 
   <script>
-    // タスクを管理する配列
-    const todos = [];
+    // Local Storage に保存するときの名前
+    const STORAGE_KEY = "todos";
+
+    // 保存されているタスクを読み込む（なければ空の配列）
+    function loadTodos() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        // 形が壊れているデータは使わない
+        if (!Array.isArray(saved)) return [];
+        return saved.filter((todo) => todo && typeof todo.text === "string");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // 今のタスクを Local Storage に保存する
+    function saveTodos() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      } catch (e) {
+        // 保存できない環境（プライベートモードなど）でも画面はそのまま使えるようにする
+      }
+    }
+
+    // タスクを管理する配列（ページを開いたときに保存済みのタスクを読み込む）
+    const todos = loadTodos();
 
     const form = document.getElementById("todo-form");
     const input = document.getElementById("todo-input");
@@ -247,6 +271,7 @@
         text.textContent = todo.text;
         text.addEventListener("click", () => {
           todos[index].done = !todos[index].done;
+          saveTodos();
           render();
         });
 
@@ -255,6 +280,7 @@
         deleteBtn.textContent = "削除";
         deleteBtn.addEventListener("click", () => {
           todos.splice(index, 1);
+          saveTodos();
           render();
         });
 
@@ -273,6 +299,7 @@
       if (text === "") return;
 
       todos.push({ text: text, done: false });
+      saveTodos();
       input.value = "";
       updateAddButton();
       render();
