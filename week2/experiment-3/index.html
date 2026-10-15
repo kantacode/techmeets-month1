@@ -119,6 +119,20 @@
       text-align: center;
     }
 
+    .search {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: #4a90e2;
+    }
+
     .filters {
       display: flex;
       gap: 8px;
@@ -159,10 +173,12 @@
       <button type="submit" id="add-btn" disabled>追加</button>
     </form>
 
+    <input type="search" class="search" id="search-input" placeholder="キーワードで絞り込み" autocomplete="off">
+
     <div class="filters" id="filters">
       <button type="button" class="filter-btn active" data-filter="all">すべて</button>
-      <button type="button" class="filter-btn" data-filter="active">未完了</button>
-      <button type="button" class="filter-btn" data-filter="done">完了</button>
+      <button type="button" class="filter-btn" data-filter="active">未完了のみ</button>
+      <button type="button" class="filter-btn" data-filter="done">完了済みのみ</button>
     </div>
 
     <p class="count" id="todo-count"></p>
@@ -180,9 +196,12 @@
     const list = document.getElementById("todo-list");
     const count = document.getElementById("todo-count");
     const filters = document.getElementById("filters");
+    const searchInput = document.getElementById("search-input");
 
     // 今選ばれているフィルター（"all" / "active" / "done"）
     let currentFilter = "all";
+    // 検索ボックスに入力されたキーワード（前後の空白は除く）
+    let keyword = "";
 
     // フィルターごとの「表示する条件」と「0件のときのメッセージ」
     const filterRules = {
@@ -201,15 +220,20 @@
 
       // 表示するタスクだけを選ぶ
       // 完了・削除のときに todos の何番目かが必要なので、元の index も一緒に持っておく
+      // 状態のフィルターとキーワード検索の両方に合うものだけ残す（英字は大文字・小文字を区別しない）
       const rule = filterRules[currentFilter];
+      const lowerKeyword = keyword.toLowerCase();
       const visibleTodos = todos
         .map((todo, index) => ({ todo, index }))
-        .filter(({ todo }) => rule.match(todo));
+        .filter(({ todo }) => rule.match(todo))
+        .filter(({ todo }) => todo.text.toLowerCase().includes(lowerKeyword));
 
       if (visibleTodos.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
-        empty.textContent = rule.emptyText;
+        empty.textContent = keyword === ""
+          ? rule.emptyText
+          : `「${keyword}」に一致するタスクはありません`;
         list.appendChild(empty);
         return;
       }
@@ -269,6 +293,12 @@
       filters.querySelectorAll(".filter-btn").forEach((btn) => {
         btn.classList.toggle("active", btn === button);
       });
+      render();
+    });
+
+    // 検索ボックスに入力するたびに絞り込み直す
+    searchInput.addEventListener("input", () => {
+      keyword = searchInput.value.trim();
       render();
     });
 
