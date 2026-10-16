@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>好きなものまとめ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      background: #f2f4f7;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .lead {
+      margin: 0 0 32px;
+      color: #666;
+      text-align: center;
+    }
+
+    /* カードを横に並べて、入りきらなければ次の行に折り返す */
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    /* 1枚の幅は 280px を基準に伸び縮みさせ、広がりすぎないよう上限を決める */
+    /* （PCでは1行に3枚、タブレットでは2枚、スマホでは1枚になる） */
+    .card {
+      flex: 1 1 280px;
+      max-width: 320px;
+      overflow: hidden;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+
+    /* 画像の拡大がカードの外にはみ出さないように囲む */
+    .card-img-wrap {
+      overflow: hidden;
+    }
+
+    .card-img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 3 / 2; /* 画像の縦横比をそろえる */
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+
+    .card-body {
+      padding: 16px 20px 20px;
+    }
+
+    .card-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      transition: color 0.25s;
+    }
+
+    .card-text {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #666;
+    }
+
+    /* ホバーしたらカードを少し浮かせて影を濃くし、画像を少しだけ拡大する */
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .card:hover .card-img {
+      transform: scale(1.08);
+    }
+
+    .card:hover .card-title {
+      color: #4a90e2;
+    }
+
+    /* 「視差効果を減らす」設定をしている人には動きをつけない */
+    @media (prefers-reduced-motion: reduce) {
+      .card,
+      .card-img {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>好きなものまとめ</h1>
+    <p class="lead">わたしの好きなものを紹介します</p>
+
+    <div class="cards">
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/f8c8c8/333?text=Music" alt="音楽のイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">音楽</h2>
+          <p class="card-text">ダンスをやっていることもあってジャンル問わず聞きます。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/c8e0f8/333?text=INI" alt="INIのイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">INI</h2>
+          <p class="card-text">INIというアイドルグループが好きです。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/fde6b8/333?text=Ramen" alt="ラーメンのイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">ラーメン</h2>
+          <p class="card-text">家系ラーメンが好きです。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/c8f0d8/333?text=Basketball" alt="バスケットボールのイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">バスケットボール</h2>
+          <p class="card-text">高校の部活動でやっていて今もたまにやります。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/e0d0f8/333?text=Dance" alt="ダンスのイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">ダンス</h2>
+          <p class="card-text">大学のサークルでダンスをやっています。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-img-wrap">
+          <img class="card-img" src="https://placehold.co/600x400/f0f0c0/333?text=Books" alt="本のイメージ画像">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">読書</h2>
+          <p class="card-text">小説を主に読みます。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</body>
+</html>
