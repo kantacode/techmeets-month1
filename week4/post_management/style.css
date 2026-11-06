@@ -1,0 +1,14 @@
+body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background: #f5f5f5; }
+label { display: block; margin-top: 16px; font-weight: bold; }
+input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+textarea { height: 240px; }
+form > button { margin-top: 20px; padding: 10px 24px; }
+.actions { white-space: nowrap; }
+.actions form { display: inline; }
+.actions button { margin: 0 0 0 8px; padding: 2px 8px; }
+.errors { color: #c00; background: #fee; padding: 12px 24px; border-radius: 6px; }
+.meta { color: #666; font-size: 14px; }
+.content { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }

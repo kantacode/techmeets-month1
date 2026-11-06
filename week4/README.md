@@ -53,3 +53,34 @@ PHP と MySQL で作ったユーザー管理システムです。ユーザーの
 - **重複登録をエラーメッセージで表示する**：PHP 8.1 以降は SQL エラーで例外が投げられ、実装例のままだと画面が Fatal error で止まる。`mysqli_report(MYSQLI_REPORT_OFF)` を設定し、同じユーザー名・メールアドレスのときはメッセージを表示するようにした。
 - **削除を POST で受け付ける**：GET のリンクだと、URL を開くだけでデータが消えてしまうため、フォームから送る形にした。
 - **入力チェックを共通化した**：登録と編集で同じチェックが必要なので、`db.php` の `validateUser()` にまとめた。
+
+# 記事投稿システム（実践課題：選択肢A）
+
+## 概要
+
+PHP と MySQL で作った記事投稿システムです。`post_management/` に入っています。記事の一覧表示（新しい順）・詳細表示・投稿・編集・削除ができます。
+
+| ファイル | 役割 |
+|---|---|
+| `post_management/db.php` | DB接続、エスケープ用の `h()`、入力チェック |
+| `post_management/index.php` | 記事一覧（新しい順） |
+| `post_management/show.php` | 記事詳細 |
+| `post_management/create.php` | 記事投稿 |
+| `post_management/edit.php` | 記事編集 |
+| `post_management/delete.php` | 記事削除 |
+| `post_management/style.css` | スタイル |
+
+## 動かし方
+
+ユーザー管理システムと同じ手順でコンテナを起動します。初回のみ、phpMyAdmin の `myapp_db` で以下の SQL を実行してから、PHP Server で `post_management/index.php` を開きます。
+
+```sql
+CREATE TABLE posts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    author VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
