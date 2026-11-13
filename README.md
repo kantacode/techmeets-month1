@@ -17,7 +17,7 @@ HTML / CSS / JavaScript の画面づくりから始めて、PHP のフォーム�
 | 3 | お問い合わせフォーム | 入力チェックとXSS対策をしたPHPのフォーム | [week3/contact/](week3/contact/) |
 | 4 | ユーザー管理システム | PHP + MySQL でユーザーの登録・一覧・編集・削除（CRUD） | [week4/user_management/](week4/user_management/) |
 | 4 | 記事投稿システム | 実践課題。記事の投稿・一覧・詳細・編集・削除 | [week4/post_management/](week4/post_management/) |
-| 5 | Postmanのリクエスト | JSONPlaceholder の API に GET / POST を送った記録 | [postman/](postman/) |
+| 5 | Postmanで API 操作 | JSONPlaceholder の API に GET / POST / DELETE を送り、レスポンスとステータスコードを確認した | — |
 
 各週の詳しい内容やふりかえりは、それぞれのフォルダにある `README.md` に書いています。
 
@@ -34,7 +34,6 @@ HTML / CSS / JavaScript の画面づくりから始めて、PHP のフォーム�
 - **HTML のファイル（Week 1〜3）**：VS Code の Live Server で開きます。
 - **PHP のファイル（Week 3〜4）**：VS Code の PHP Server で開きます（Live Server では動きません）。
 - **Week 4 のアプリ**：先に Docker で MySQL を起動し、テーブルを作る必要があります。手順は [week4/README.md](week4/README.md) にあります。
-- **Week 5 の Postman**：Postman でこのフォルダを開くと、保存したリクエストを確認できます。
 
 ## 学んだこと
 
